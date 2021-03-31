@@ -14,23 +14,26 @@ const clickSelectedDate = async (dateToClick: number, page: puppeteer.Page) => {
             await dateElement.click()
             while (!isLoaded) {
                 await page.waitForTimeout(50)
-                const number = await printSelectedDate(page);
-                if (number === dateToClick) { 
+                const result = await printSelectedDate(page);
+                if (result.number === dateToClick) { 
                     isLoaded = true
+                    return true
                 }
             } 
         }
     }
+    return false
 };
-
-
 
 const printSelectedDate = async (page: puppeteer.Page) => {
 
     let currentSelectedDate = await page.$('#offering-page-selected-long-date');
     const innerHTML = await currentSelectedDate?.evaluate(element => element.textContent);
     const number = Number(innerHTML.replace(/[^\d.-]/g, ""));
-    return number;
+    return {
+        fullDate: innerHTML,
+        number
+    };
 };
 
 const getNextDate = (today: Date, increment: number) => {
@@ -49,7 +52,7 @@ const scraper = async () => {
     const datesArray : number[] = [todayDate];
     
     // add in two weeks worth of dates
-    for (let i = 1; i <= 14; i++) {
+    for (let i = 1; i <= 20; i++) {
         const nextDate = getNextDate(today, i).dateNumber
         datesArray.push(nextDate)
     };
@@ -63,22 +66,21 @@ const scraper = async () => {
     // get all available dates
     for (let i = 0; i <= datesArray.length - 1; i++) {
         const date = datesArray[i];
-        await clickSelectedDate(date, page);
-
-        const output = await printSelectedDate(page)
-        console.log("This is the date:", output)
+        let isDateAvailable = await clickSelectedDate(date, page);
+        if (isDateAvailable) {
+            const output = await printSelectedDate(page);
+            console.log("This is the date:", output.fullDate);
+        };
+        
 
         if (datesArray[i+1] < date) {
             //click next month
             const nextMonthArrow = await page.$('.ui-datepicker-next');
             await nextMonthArrow?.click();
-            await page.waitForTimeout(1000)
+            await page.waitForTimeout(1000);
         };
-    }
-    
-    
-    
+    };
    
-}
+};
 
 scraper();

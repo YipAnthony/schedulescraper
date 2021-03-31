@@ -42,7 +42,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var puppeteer_1 = __importDefault(require("puppeteer"));
 var url = 'https://app.rockgympro.com/b/widget/?a=offering&offering_guid=1d8290284480469a9311657beea043b5&random=5eea3c645f5c1&iframeid=&mode=p';
 var clickSelectedDate = function (dateToClick, page) { return __awaiter(void 0, void 0, void 0, function () {
-    var allDates, isLoaded, i, dateElement, innerHTML, date, number;
+    var allDates, isLoaded, i, dateElement, innerHTML, date, result;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0: return [4 /*yield*/, page.$$('.datepicker-available-day')];
@@ -70,15 +70,16 @@ var clickSelectedDate = function (dateToClick, page) { return __awaiter(void 0, 
                 _a.sent();
                 return [4 /*yield*/, printSelectedDate(page)];
             case 7:
-                number = _a.sent();
-                if (number === dateToClick) {
+                result = _a.sent();
+                if (result.number === dateToClick) {
                     isLoaded = true;
+                    return [2 /*return*/, true];
                 }
                 return [3 /*break*/, 5];
             case 8:
                 i++;
                 return [3 /*break*/, 2];
-            case 9: return [2 /*return*/];
+            case 9: return [2 /*return*/, false];
         }
     });
 }); };
@@ -93,7 +94,10 @@ var printSelectedDate = function (page) { return __awaiter(void 0, void 0, void 
             case 2:
                 innerHTML = _a.sent();
                 number = Number(innerHTML.replace(/[^\d.-]/g, ""));
-                return [2 /*return*/, number];
+                return [2 /*return*/, {
+                        fullDate: innerHTML,
+                        number: number
+                    }];
         }
     });
 }); };
@@ -106,7 +110,7 @@ var getNextDate = function (today, increment) {
     };
 };
 var scraper = function () { return __awaiter(void 0, void 0, void 0, function () {
-    var today, todayDate, datesArray, i, nextDate, browser, page, i, date, output, nextMonthArrow;
+    var today, todayDate, datesArray, i, nextDate, browser, page, i, date, isDateAvailable, output, nextMonthArrow;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -114,7 +118,7 @@ var scraper = function () { return __awaiter(void 0, void 0, void 0, function ()
                 todayDate = today.getDate();
                 datesArray = [todayDate];
                 // add in two weeks worth of dates
-                for (i = 1; i <= 14; i++) {
+                for (i = 1; i <= 20; i++) {
                     nextDate = getNextDate(today, i).dateNumber;
                     datesArray.push(nextDate);
                 }
@@ -132,33 +136,39 @@ var scraper = function () { return __awaiter(void 0, void 0, void 0, function ()
                 i = 0;
                 _a.label = 4;
             case 4:
-                if (!(i <= datesArray.length - 1)) return [3 /*break*/, 12];
+                if (!(i <= datesArray.length - 1)) return [3 /*break*/, 13];
                 date = datesArray[i];
                 return [4 /*yield*/, clickSelectedDate(date, page)];
             case 5:
-                _a.sent();
+                isDateAvailable = _a.sent();
+                if (!isDateAvailable) return [3 /*break*/, 7];
                 return [4 /*yield*/, printSelectedDate(page)];
             case 6:
                 output = _a.sent();
-                console.log("This is the date:", output);
-                if (!(datesArray[i + 1] < date)) return [3 /*break*/, 10];
-                return [4 /*yield*/, page.$('.ui-datepicker-next')];
+                console.log("This is the date:", output.fullDate);
+                _a.label = 7;
             case 7:
+                ;
+                if (!(datesArray[i + 1] < date)) return [3 /*break*/, 11];
+                return [4 /*yield*/, page.$('.ui-datepicker-next')];
+            case 8:
                 nextMonthArrow = _a.sent();
                 return [4 /*yield*/, (nextMonthArrow === null || nextMonthArrow === void 0 ? void 0 : nextMonthArrow.click())];
-            case 8:
-                _a.sent();
-                return [4 /*yield*/, page.waitForTimeout(1000)];
             case 9:
                 _a.sent();
-                _a.label = 10;
+                return [4 /*yield*/, page.waitForTimeout(1000)];
             case 10:
-                ;
+                _a.sent();
                 _a.label = 11;
             case 11:
+                ;
+                _a.label = 12;
+            case 12:
                 i++;
                 return [3 /*break*/, 4];
-            case 12: return [2 /*return*/];
+            case 13:
+                ;
+                return [2 /*return*/];
         }
     });
 }); };
